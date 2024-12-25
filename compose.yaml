@@ -1,0 +1,18 @@
+﻿services:
+  webapplication1:
+    image: webapplication1
+    build:
+      context: .
+      dockerfile: WebApplication1/Dockerfile
+
+  rabbitmqapi:
+    image: rabbitmqapi
+    build:
+      context: .
+      dockerfile: RabbitMQApi/Dockerfile
+
+  abstracttasksapi:
+    image: abstracttasksapi
+    build:
+      context: .
+      dockerfile: AbstractTasksApi/Dockerfile
