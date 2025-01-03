@@ -9,9 +9,9 @@ namespace AbstractTasksLogic.Services;
 public interface IAbstractTaskService
 {
     public Task<AbstractTask> AddTaskAsync(CreateTaskModel model);
-    public Task DeleteTaskAsync(string id);
-    public Task<AbstractTask> UpdateTaskAsync(AbstractTask model, string id);
-    public Task RestartTaskAsync(string id);
+    public Task DeleteTaskAsync(string id, string userId);
+    public Task<AbstractTask> UpdateTaskAsync(AbstractTask model, string userId);
+    public Task RestartTaskAsync(string id, string userId);
     public Task<IEnumerable<AbstractTask>> GetTasksAsync(string? taskId, string userId);
 }
 
@@ -37,7 +37,7 @@ public class AbstractTaskService : IAbstractTaskService
             Status = "",
             StatusMessage = "Just added",
             Data = model.Data,
-            UserId = Guid.NewGuid(), // добавить интеграцию сервиса Authorization
+            UserId = Guid.Parse(model.UserId),
             ExecutionStartedAt = null,
             ExecutionFinishedAt = null
         };
@@ -55,19 +55,19 @@ public class AbstractTaskService : IAbstractTaskService
             ExecutionFinishedAt = result.ExecutionFinishedAt
         };
 
-        _abstractTaskExecutor.ExecuteAsync(domainModel, result.Id.ToString());
+        _abstractTaskExecutor.ExecuteAsync(domainModel, result.Id.ToString(), entityModel.UserId.ToString());
 
         return domainModel;
     }
 
-    public async Task DeleteTaskAsync(string id)
+    public async Task DeleteTaskAsync(string id, string userId)
     {
-        await _taskContext.RemoveTaskAsync(id);
+        await _taskContext.RemoveTaskAsync(id, userId);
     }
 
-    public async Task<AbstractTask> UpdateTaskAsync(AbstractTask model, string id)
+    public async Task<AbstractTask> UpdateTaskAsync(AbstractTask model, string userId)
     {
-        var existingEntity = await _taskContext.GetTaskByIdAsync(id);
+        var existingEntity = await _taskContext.GetTaskByIdAsync(model.Id, userId);
         existingEntity.Description = model.Description;
         existingEntity.TTL = model.TTL;
         existingEntity.Status = model.Status;
@@ -80,19 +80,19 @@ public class AbstractTaskService : IAbstractTaskService
         return task;
     }
 
-    public async Task RestartTaskAsync(string id)
+    public async Task RestartTaskAsync(string id, string userId)
     {
-        var existingEntity = await _taskContext.GetTaskByIdAsync(id);
+        var existingEntity = await _taskContext.GetTaskByIdAsync(id, userId);
         var domainModel = GetDomainModelFromEntity(existingEntity);
 
-        _abstractTaskExecutor.ExecuteAsync(domainModel, id);
+        _abstractTaskExecutor.ExecuteAsync(domainModel, id, existingEntity.UserId.ToString());
     }
 
     public async Task<IEnumerable<AbstractTask>> GetTasksAsync(string? taskId, string userId)
     {
         if (taskId != null)
         {
-            var entity = await _taskContext.GetTaskByIdAsync(taskId);
+            var entity = await _taskContext.GetTaskByIdAsync(taskId, userId);
             var domainModel = GetDomainModelFromEntity(entity);
 
             return [domainModel];

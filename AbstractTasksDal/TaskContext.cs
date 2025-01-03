@@ -6,9 +6,9 @@ namespace AbstractTasksDal;
 public interface ITaskContext
 {
     public Task<TaskEntity> AddTaskAsync(TaskEntity task);
-    public Task RemoveTaskAsync(string id);
+    public Task RemoveTaskAsync(string id, string UserId);
     public Task<TaskEntity> UpdateTaskAsync(TaskEntity task);
-    public Task<TaskEntity> GetTaskByIdAsync(string id);
+    public Task<TaskEntity> GetTaskByIdAsync(string id, string userId);
     public Task<List<TaskEntity>> GetTasksByUserIdAsync(string userId);
 }
 
@@ -27,9 +27,9 @@ public class TaskContext : DbContext, ITaskContext
         return task;
     }
 
-    public async Task RemoveTaskAsync(string id)
+    public async Task RemoveTaskAsync(string id, string userId)
     {
-        var existingTask = await GetTaskByIdAsync(id);
+        var existingTask = await GetTaskByIdAsync(id, userId);
         _tasks.Remove(existingTask);
         await SaveChangesAsync();
     }
@@ -41,11 +41,14 @@ public class TaskContext : DbContext, ITaskContext
         return task;
     }
 
-    public async Task<TaskEntity> GetTaskByIdAsync(string id)
+    public async Task<TaskEntity> GetTaskByIdAsync(string id, string userId)
     {
-        var task = await _tasks.FindAsync(Guid.Parse(id));
+        var task = await _tasks
+            .Where(t => string.Equals(t.UserId.ToString(), userId, StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefaultAsync(t => string.Equals(t.Id.ToString(), id));
+        
         if (task is null)
-            throw new KeyNotFoundException("Task not found");
+            throw new KeyNotFoundException("No task was found for this user");
 
         return task;
     }

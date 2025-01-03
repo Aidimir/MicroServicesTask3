@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AbstractTaskContracts.IncomeModels;
 
-public record DeleteTaskModel : BaseAuthTaskModel
+public record BaseAuthTaskModel
 {
-    [Required(ErrorMessage = "TaskId is required.")]
+    [Required(ErrorMessage = "UserId is required.")]
     [StringLength(36, ErrorMessage = "TaskId must be 36 characters long.")]
-    public required string TaskId { get; init; }
+    public required string UserId { get; init; }
 }

@@ -1,11 +1,15 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Authentication;
 using AbstractTaskContracts.IncomeModels;
 using AbstractTaskContracts.OutcomeModels;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api;
 
 [Route("api/[controller]")]
+[Authorize]
 [ApiController]
 public class TasksController : ControllerBase
 {
@@ -24,6 +28,15 @@ public class TasksController : ControllerBase
         _deleteRequestClient = deleteRequestClient;
     }
 
+    private string UserId
+    {
+        get
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.NameId)?.Value ??
+                   throw new AuthenticationException("No user id was provided");
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> AddTask(CreateTaskModel taskRequest)
     {
@@ -32,10 +45,10 @@ public class TasksController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetTaskById(string id)
+    [HttpGet]
+    public async Task<IActionResult> GetTaskById(string? id)
     {
-        var model = new GetTaskModel {TaskId = id, UserId = null};
+        var model = new GetTaskModel {TaskId = id, UserId = UserId};
         var response = await _getRequestClient.GetResponse<MultipleTasksResponse>(model);
 
         return Ok(response);
@@ -44,7 +57,7 @@ public class TasksController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> RestartTask(string id)
     {
-        var model = new RestartTaskModel {TaskId = id};
+        var model = new RestartTaskModel {TaskId = id, UserId = UserId};
         var response = await _restartRequestClient.GetResponse<RestartTaskResponse>(model);
 
         return Ok(response);
@@ -53,7 +66,7 @@ public class TasksController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTask(string id)
     {
-        var model = new DeleteTaskModel {TaskId = id};
+        var model = new DeleteTaskModel {TaskId = id, UserId = UserId};
         await _deleteRequestClient.GetResponse<DeleteTaskResponse>(model);
 
         return NoContent();

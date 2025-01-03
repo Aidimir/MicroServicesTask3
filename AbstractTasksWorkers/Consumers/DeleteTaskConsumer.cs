@@ -17,7 +17,7 @@ public class DeleteTaskConsumer : BasicCrudConsumer<DeleteTaskModel>
     public override async Task Consume(ConsumeContext<DeleteTaskModel> context)
     {
         await base.Consume(context);
-        await _abstractTaskService.DeleteTaskAsync(context.Message.TaskId);
+        await _abstractTaskService.DeleteTaskAsync(context.Message.TaskId, context.Message.UserId);
 
         await context.RespondAsync(new DeleteTaskResponse
             {Success = true, Message = $"Task {context.Message.TaskId} was successfully deleted"});

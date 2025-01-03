@@ -45,6 +45,7 @@ services:
       "RabbitMQConnection:Host": "${RABBITMQ_HOST}"
       "RabbitMQConnection:Username": "${RABBITMQ_USER}"
       "RabbitMQConnection:Password": "${RABBITMQ_PASSWORD}"
+      "Authorization:URL": "${AUTH_URL}"
   workers:
     restart: always
     build:

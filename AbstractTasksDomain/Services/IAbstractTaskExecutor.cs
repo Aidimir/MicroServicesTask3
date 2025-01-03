@@ -4,5 +4,6 @@ namespace AbstractTasksDomain.Services;
 
 public interface IAbstractTaskExecutor
 {
-    public Task ExecuteAsync(AbstractTask task, string taskId, CancellationToken cancellationToken = default);
+    public Task ExecuteAsync(AbstractTask task, string taskId, string userId,
+        CancellationToken cancellationToken = default);
 }

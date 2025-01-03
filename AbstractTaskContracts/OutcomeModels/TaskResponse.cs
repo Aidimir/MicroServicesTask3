@@ -7,5 +7,5 @@ public class TaskResponse
     public required string Data { get; set; }
     public required int TTL { get; set; }
     public required string Status { get; set; }
-    public required string StatusMessage { get; set; } 
+    public required string StatusMessage { get; set; }
 }

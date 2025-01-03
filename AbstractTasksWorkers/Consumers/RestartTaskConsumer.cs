@@ -18,7 +18,7 @@ public class RestartTaskConsumer : BasicCrudConsumer<RestartTaskModel>
     {
         await base.Consume(context);
 
-        await _abstractTaskService.RestartTaskAsync(context.Message.TaskId);
+        await _abstractTaskService.RestartTaskAsync(context.Message.TaskId, context.Message.UserId);
         await context.RespondAsync(new RestartTaskResponse {TaskId = context.Message.TaskId});
     }
 }

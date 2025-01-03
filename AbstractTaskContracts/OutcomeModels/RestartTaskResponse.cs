@@ -2,5 +2,5 @@ namespace AbstractTaskContracts.OutcomeModels;
 
 public record RestartTaskResponse
 {
-    public string TaskId { get; set; }
+    public required string TaskId { get; set; }
 }

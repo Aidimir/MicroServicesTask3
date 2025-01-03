@@ -1,11 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
 using AbstractTaskContracts.IncomeModels;
-using AbstractTasksDal;
 using Api;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddHttpClient(); // Регистрируем IHttpClientFactory
+builder.Services.AddSingleton<JwtSecurityTokenHandler, CustomJwtTokenHandler>(); // Регистрируем наш кастомный TokenHandler
 
 builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -56,10 +58,19 @@ builder.Services.AddSwaggerGen(setup =>
 
     setup.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        { jwtSecurityScheme, Array.Empty<string>() }
+        {jwtSecurityScheme, Array.Empty<string>()}
+    });
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var serviceProvider = builder.Services.BuildServiceProvider();
+        options.TokenHandlers.Clear();
+        options.TokenHandlers.Add(serviceProvider.GetRequiredService<JwtSecurityTokenHandler>());
     });
 
-});
+builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -67,12 +78,14 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
 // {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 // }
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

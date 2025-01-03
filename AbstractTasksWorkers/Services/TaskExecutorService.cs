@@ -16,7 +16,8 @@ public class TaskExecutorService : IAbstractTaskExecutor
         _logger = logger;
     }
 
-    public async Task ExecuteAsync(AbstractTask task, string taskId, CancellationToken cancellationToken = default)
+    public async Task ExecuteAsync(AbstractTask task, string taskId, string userId,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -27,7 +28,7 @@ public class TaskExecutorService : IAbstractTaskExecutor
             // Переводим задачу в статус "Ожидает выполнения"
             task.Status = "Awaiting";
             task.StatusMessage = "Awaiting task to be executed";
-            await PublishStatusChangedAsync(task, taskId);
+            await PublishStatusChangedAsync(task, taskId, userId);
             _logger.LogInformation("Task {TaskId} status updated to {Status}", taskId, task.Status);
 
             // Имитация ожидания 5 sec перед началом выполнения
@@ -37,7 +38,7 @@ public class TaskExecutorService : IAbstractTaskExecutor
             task.Status = "Executing";
             task.StatusMessage = "Executing task";
             task.ExecutionStartedAt = DateTime.UtcNow;
-            await PublishStatusChangedAsync(task, taskId);
+            await PublishStatusChangedAsync(task, taskId, userId);
             _logger.LogInformation("Task {TaskId} execution started at {StartTime}. Status: {Status}", taskId,
                 task.ExecutionStartedAt, task.Status);
 
@@ -57,7 +58,7 @@ public class TaskExecutorService : IAbstractTaskExecutor
                 task.Status = "Canceled";
                 task.StatusMessage = "TTL is shorter than the execution time";
                 task.ExecutionFinishedAt = DateTime.UtcNow;
-                await PublishStatusChangedAsync(task, taskId);
+                await PublishStatusChangedAsync(task, taskId, userId);
 
                 _logger.LogWarning("Task {TaskId} canceled due to exceeding TTL. Finished at {FinishTime}", taskId,
                     task.ExecutionFinishedAt);
@@ -71,7 +72,7 @@ public class TaskExecutorService : IAbstractTaskExecutor
             task.Status = "Finished";
             task.StatusMessage = "Finished task succesfully";
             task.ExecutionFinishedAt = DateTime.UtcNow;
-            await PublishStatusChangedAsync(task, taskId);
+            await PublishStatusChangedAsync(task, taskId, userId);
 
             _logger.LogInformation("Task {TaskId} successfully finished at {FinishTime}", taskId,
                 task.ExecutionFinishedAt);
@@ -82,13 +83,13 @@ public class TaskExecutorService : IAbstractTaskExecutor
             task.Status = "Canceled";
             task.StatusMessage = $"Exception caught while executing task. {ex.Message}";
             task.ExecutionFinishedAt = DateTime.UtcNow;
-            await PublishStatusChangedAsync(task, taskId);
+            await PublishStatusChangedAsync(task, taskId, userId);
 
             _logger.LogError(ex, "Task {TaskId} failed with an exception. Status set to {Status}", taskId, task.Status);
         }
     }
 
-    private async Task PublishStatusChangedAsync(AbstractTask task, string taskId)
+    private async Task PublishStatusChangedAsync(AbstractTask task, string taskId, string userId)
     {
         await _publishEndpoint.Publish(new TaskExecutedModel
         {
@@ -97,7 +98,8 @@ public class TaskExecutorService : IAbstractTaskExecutor
             StatusMessage = task.StatusMessage,
             ExecutionFinishedAt = task.ExecutionFinishedAt,
             ExecutionStartedAt = task.ExecutionStartedAt,
-            TTL = task.TTL
+            TTL = task.TTL,
+            UserId = userId
         });
 
         _logger.LogInformation("Status change of Task {TaskId} published to the queue. Current status: {Status}",
